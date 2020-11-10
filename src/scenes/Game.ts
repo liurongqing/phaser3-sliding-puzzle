@@ -22,7 +22,6 @@ export class Game extends Phaser.Scene {
   preload() { }
 
   create() {
-    // this.prepareBoard()
     this.layout()
 
     this.input.on('gameobjectdown', this.handleTile, this)
@@ -40,8 +39,6 @@ export class Game extends Phaser.Scene {
         // 剔除为0的那一块
         if (shuffledIndexArray[tileIndex] === this.tileSum - 1) {
           tileSprite.blank = true
-          // tileSprite.setTint(0xff0000)
-          // tileSprite.setAlpha(0)
           tileSprite.setVisible(false)
           tileSprite.setDepth(-1)
         }
@@ -55,6 +52,12 @@ export class Game extends Phaser.Scene {
         tileIndex++
       }
     }
+
+    this.minimap()
+  }
+
+  minimap() {
+    this.add.image(300, 800, 'minibg').setScale(0.3)
   }
 
   handleTile(pointer: any, gameObject: any) {
