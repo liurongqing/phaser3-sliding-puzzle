@@ -13,8 +13,8 @@ export class Game extends Phaser.Scene {
   init() {
     const { width } = this.scale
     this.board_cols = Math.floor(width / GameOptions.TILE_SIZE);
-    this.board_rows = this.board_cols
-    // this.board_rows = 3
+    // this.board_rows = this.board_cols
+    this.board_rows = 3
     this.tileSum = this.board_rows * this.board_cols
     this.tileGroup = this.add.group()
   }
@@ -35,15 +35,17 @@ export class Game extends Phaser.Scene {
     let tileSprite: any
     for (let row = 0; row < this.board_rows; row++) {
       for (let col = 0; col < this.board_cols; col++) {
+        tileSprite = this.tileGroup.create(col * GameOptions.TILE_SIZE, row * GameOptions.TILE_SIZE, 'bg', shuffledIndexArray[tileIndex])
+
         // 剔除为0的那一块
-        if (shuffledIndexArray[tileIndex] !== this.tileSum - 1) {
-          tileSprite = this.tileGroup.create(col * GameOptions.TILE_SIZE, row * GameOptions.TILE_SIZE, 'bg', shuffledIndexArray[tileIndex])
-        } else {
-          tileSprite = this.tileGroup.create(col * GameOptions.TILE_SIZE, row * GameOptions.TILE_SIZE, 'bg', shuffledIndexArray[tileIndex])
-          // tileSprite.setVisible(false)
+        if (shuffledIndexArray[tileIndex] === this.tileSum - 1) {
           tileSprite.blank = true
-          tileSprite.setTint(0xff0000)
+          // tileSprite.setTint(0xff0000)
+          // tileSprite.setAlpha(0)
+          tileSprite.setVisible(false)
+          tileSprite.setDepth(-1)
         }
+
         tileSprite.setOrigin(0)
         tileSprite.setInteractive()
         tileSprite.row = row
@@ -122,7 +124,7 @@ export class Game extends Phaser.Scene {
     let isFinished = true
     Phaser.Actions.Call(this.tileGroup.getChildren(), function (tileSprite: any) {
       if (tileSprite.tileIndex !== tileSprite.rightIndex) {
-        isFinished = true;
+        isFinished = false;
         return;
       }
     }, this)
