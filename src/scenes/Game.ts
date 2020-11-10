@@ -1,156 +1,144 @@
-import { SceneKeys } from '~/consts/index'
+import { SceneKeys, GameOptions } from '~/consts/index'
 
-
-
-const PIECE_WIDTH = 200
-const PIECE_HEIGHT = 200
-let BOARD_COLS, BOARD_ROWS
-
-let piecesGroup
-let piecesAmount
-let shuffledIndexArray = []
-
-
-export default class Game extends Phaser.Scene {
+export class Game extends Phaser.Scene {
+  board_rows: number
+  board_cols: number
+  tileActive: any
+  tileSum: number
+  tileGroup: any
   constructor() {
     super(SceneKeys.GAME)
   }
-  preload() { }
-  create() {
-    this.prepareBoard()
 
+  init() {
+    const { width } = this.scale
+    this.board_cols = Math.floor(width / GameOptions.TILE_SIZE);
+    this.board_rows = this.board_cols
+    // this.board_rows = 3
+    this.tileSum = this.board_rows * this.board_cols
+    this.tileGroup = this.add.group()
   }
-  update() { }
 
-  prepareBoard() {
+  preload() { }
 
-    var piecesIndex = 0,
-      i, j,
-      piece;
+  create() {
+    // this.prepareBoard()
+    this.layout()
 
-    const { width, height } = this.scale
+    this.input.on('gameobjectdown', this.handleTile, this)
+  }
 
-    BOARD_COLS = Math.floor(width / PIECE_WIDTH);
-    BOARD_ROWS = Math.floor(height / PIECE_HEIGHT);
-
-    piecesAmount = BOARD_COLS * BOARD_ROWS;
-
-    shuffledIndexArray = this.createShuffledIndexArray();
-
-    piecesGroup = this.add.group();
-
-    for (i = 0; i < BOARD_ROWS; i++) {
-      for (j = 0; j < BOARD_COLS; j++) {
-        if (shuffledIndexArray[piecesIndex]) {
-          piece = piecesGroup.create(j * PIECE_WIDTH, i * PIECE_HEIGHT, "bg", shuffledIndexArray[piecesIndex]);
+  // 初始化布局
+  layout() {
+    const shuffledIndexArray = this.createShuffledIndexArray()
+    let tileIndex = 0
+    let tileSprite: any
+    for (let row = 0; row < this.board_rows; row++) {
+      for (let col = 0; col < this.board_cols; col++) {
+        // 剔除为0的那一块
+        if (shuffledIndexArray[tileIndex] !== this.tileSum - 1) {
+          tileSprite = this.tileGroup.create(col * GameOptions.TILE_SIZE, row * GameOptions.TILE_SIZE, 'bg', shuffledIndexArray[tileIndex])
         } else {
-          piece = piecesGroup.create(j * PIECE_WIDTH, i * PIECE_HEIGHT, 'test');
-          piece.blank = true
+          tileSprite = this.tileGroup.create(col * GameOptions.TILE_SIZE, row * GameOptions.TILE_SIZE, 'bg', shuffledIndexArray[tileIndex])
+          // tileSprite.setVisible(false)
+          tileSprite.blank = true
+          tileSprite.setTint(0xff0000)
         }
-        // piece.name = 'piece' + i + 'x' + j;
-        piece.currentIndex = piecesIndex;
-        piece.destIndex = shuffledIndexArray[piecesIndex];
-        piece.setInteractive()
-        piece.setOrigin(0)
-        piece.row = i
-        piece.col = j
-        piecesIndex++;
+        tileSprite.setOrigin(0)
+        tileSprite.setInteractive()
+        tileSprite.row = row
+        tileSprite.col = col
+        tileSprite.tileIndex = tileIndex
+        tileSprite.rightIndex = shuffledIndexArray[tileIndex]
+        tileIndex++
       }
     }
-
-    this.input.on('gameobjectdown', (pointer, gameObject) => {
-      this.selectPiece(gameObject)
-    })
   }
 
-  selectPiece(piece) {
-    var blackPiece = this.canMove(piece);
-    if (blackPiece) {
-      this.movePiece(piece, blackPiece);
+  handleTile(pointer: any, gameObject: any) {
+    const blankTileSprite = this.canMove(gameObject)
+    if (blankTileSprite) {
+      this.moveTile(gameObject, blankTileSprite)
     }
-
   }
 
-  canMove(piece) {
-    var foundBlackElem = null;
-    const { row, col } = piece
-    Phaser.Actions.Call(piecesGroup.getChildren(), function (element: any) {
-      console.log(element.row, element.col)
-      if (element.row === row - 1 && element.col === col && element.blank ||
-        element.row === row + 1 && element.col === col && element.blank ||
-        element.col === col - 1 && element.row === row && element.blank ||
-        element.col === col + 1 && element.row === row && element.blank
-      ) {
-        foundBlackElem = element
+  // 如果可以移动，找出那个空白块的位置
+  canMove(activeTileSprite: any) {
+    let blankTileSprite = null
+    const { row: activeRow, col: activeCol } = activeTileSprite
+
+    // TODO: 可优化， 获取到空白块直接判断
+    Phaser.Actions.Call(this.tileGroup.getChildren(), function (tileSprite: any) {
+      if (tileSprite.blank) {
+        // 判断空白块是否在当前块的上、下、左、右，是的话，可以移动
+        if (tileSprite.row === activeRow - 1 && tileSprite.col === activeCol ||
+          tileSprite.row === activeRow + 1 && tileSprite.col === activeCol ||
+          tileSprite.col === activeCol - 1 && tileSprite.row === activeRow ||
+          tileSprite.col === activeCol + 1 && tileSprite.row === activeRow) {
+          blankTileSprite = tileSprite
+        }
       }
     }, this)
-    return foundBlackElem;
+    return blankTileSprite
   }
 
-  movePiece(piece, blackPiece) {
+  moveTile(activeTileSprite: any, blankTileSprite: any) {
 
-    const { x, y, row, col, currentIndex } = piece
-    const {row: blackRow, col: blackCol} = blackPiece
+    const originActiveTileSprite = {
+      x: activeTileSprite.x,
+      y: activeTileSprite.y,
+      row: activeTileSprite.row,
+      col: activeTileSprite.col,
+      tileIndex: activeTileSprite.tileIndex
+    }
+
     this.add.tween({
-      targets: piece,
-      x: blackPiece.x,
-      y: blackPiece.y,
+      targets: activeTileSprite,
+      x: blankTileSprite.x,
+      y: blankTileSprite.y,
       duration: 300,
       onComplete: () => {
-        blackPiece.x = x
-        blackPiece.y = y
-        blackPiece.row = row
-        blackPiece.col = col
-
-        piece.currentIndex = blackPiece.currentIndex
-        piece.row = blackRow
-        piece.col = blackCol
-        blackPiece.currentIndex = currentIndex
-        // piece.name = 'piece' + x + 'x' + y;
-        this.checkIfFinished();
+        // 将当前块与空白块交换
+        this.swapeProps(activeTileSprite, blankTileSprite, originActiveTileSprite)
+        this.checkFinished()
       }
     })
-
-
   }
 
-  checkIfFinished() {
+  swapeProps(activeTileSprite: any, blankTileSprite: any, originActiveTileSprite: any) {
+    // 交换x、y、col、row、tileIndex 属性
+    activeTileSprite.row = blankTileSprite.row
+    activeTileSprite.col = blankTileSprite.col
+    activeTileSprite.tileIndex = blankTileSprite.tileIndex
 
-    // return false
-    var isFinished = true;
+    blankTileSprite.x = originActiveTileSprite.x
+    blankTileSprite.y = originActiveTileSprite.y
+    blankTileSprite.row = originActiveTileSprite.row
+    blankTileSprite.col = originActiveTileSprite.col
+    blankTileSprite.tileIndex = originActiveTileSprite.tileIndex
+  }
 
-    // 有一个不在就是未结束
-    Phaser.Actions.Call(piecesGroup.getChildren(), function (element: any) {
-      if (element.currentIndex !== element.destIndex) {
+  checkFinished() {
+    let isFinished = true
+    Phaser.Actions.Call(this.tileGroup.getChildren(), function (tileSprite: any) {
+      if (tileSprite.tileIndex !== tileSprite.rightIndex) {
         isFinished = true;
         return;
       }
     }, this)
 
     if (isFinished) {
-      this.showFinishedText();
+      console.log('成功了')
+      // this.showFinishedText();
     }
-
-  }
-
-  showFinishedText() {
-    var style = { font: "40px Arial", fill: "#fff", align: "center" };
-    const { width, height } = this.scale
-
-    var text = this.add.text(width * 0.5, height * 0.5, "Congratulations! \nYou made it!", style);
-    text.setOrigin(0.5)
   }
 
   createShuffledIndexArray() {
-
-    var indexArray = [];
-
-    for (var i = 0; i < piecesAmount; i++) {
+    let indexArray = [];
+    for (let i = 0; i < this.tileSum; i++) {
       indexArray.push(i);
     }
-
     return this.shuffle(indexArray);
-
   }
 
   shuffle(arr: any) {
