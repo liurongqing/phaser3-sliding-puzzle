@@ -22,7 +22,7 @@ const config = {
   resolve: {
     extensions: ['.ts', '.js'],
     alias: {
-      '~': resolve('./src')
+      'src': resolve('./src')
     }
   }
 }

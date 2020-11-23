@@ -1,4 +1,4 @@
-import { SceneKeys, GameOptions } from '~/consts/index'
+import { SceneKeys, GameOptions } from 'src/consts/index'
 export class Preloader extends Phaser.Scene {
   constructor() {
     super(SceneKeys.PRELOAD)
@@ -11,7 +11,7 @@ export class Preloader extends Phaser.Scene {
     })
   }
   create() {
-    this.scene.start(SceneKeys.GAME)
+    this.scene.start('menu')
   }
   update() { }
 }
