@@ -19,7 +19,7 @@ export class Menu extends Phaser.Scene {
     })
       .setOrigin(0.5);
 
-    this.scene.start('topic-type');
+    this.scene.start('game');
     startText.on('pointerdown', () => {
       this.scene.start('topic-type');
     });

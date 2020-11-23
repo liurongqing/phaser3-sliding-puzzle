@@ -64,7 +64,7 @@ export class Game extends Phaser.Scene {
   }
 
   minimap() {
-    this.add.image(this.scale.width * 0.5, 200, 'minibg').setScale(0.36);
+    this.add.image(this.scale.width - 30, 80, 'minibg').setScale(0.36).setOrigin(1, 0);
   }
 
   layoutActions() {
@@ -84,6 +84,24 @@ export class Game extends Phaser.Scene {
     }).setOrigin(1, 0);
     text2Sprite.setInteractive();
     text2Sprite.on('pointerdown', () => {
+      // this.scene.start('topic-list')
+      console.log('开启关闭音乐');
+    });
+
+    const text3Sprite = this.add.text(width * 0.5, 380, '时间：01:20', {
+      fontSize: 40
+    }).setOrigin(0.5);
+    text3Sprite.setInteractive();
+    text3Sprite.on('pointerdown', () => {
+      // this.scene.start('topic-list')
+      console.log('开启关闭音乐');
+    });
+
+    const text4Sprite = this.add.text(30, 100, '排行榜\n 张三 01:20\n 李四 01: 23 \n 王五 01: 30', {
+      fontSize: 40
+    });
+    text4Sprite.setInteractive();
+    text4Sprite.on('pointerdown', () => {
       // this.scene.start('topic-list')
       console.log('开启关闭音乐');
     });
